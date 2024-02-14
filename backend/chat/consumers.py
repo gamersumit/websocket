@@ -3,7 +3,7 @@ import asyncio
 from channels.consumer import SyncConsumer, AsyncConsumer
 from channels.exceptions import StopConsumer
 from asgiref.sync import async_to_sync
-from .models import Chat, Group
+
 class MySyncConsumer(SyncConsumer):
 
     def websocket_connect(self, event):
