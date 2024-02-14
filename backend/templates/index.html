@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<head>
+    <title>Chat App</title>
+</head>
+<body>
+    <script>
+        var ws = new WebSocket('ws://localhost:3000/ws/sc/')
+        ws.onopen = function(){
+            console.log('websocket connection open...')
+            ws.send('hi from client')
+        }
+        ws.onmessage = function(event) {
+            console.log('Message received from server', event)
+        }
+        ws.onclose = function(event){
+            console.error('Chat socket closed unexpectedly')
+        }
+    </script>
+</body>
+</html>
