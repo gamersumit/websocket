@@ -13,8 +13,8 @@ import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.urls import path
-from first.consumers import *
-import first.routing
+from chat.consumers import *
+import chat.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 
@@ -22,8 +22,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 application = ProtocolTypeRouter({
     'http': get_asgi_application(),
     'websocket': URLRouter(
-        first.routing.websocket_urlpatterns,
-
+        chat.routing.websocket_urlpatterns,
     ),
 })
 

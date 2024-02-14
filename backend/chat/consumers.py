@@ -3,6 +3,7 @@ import asyncio
 from channels.consumer import SyncConsumer, AsyncConsumer
 from channels.exceptions import StopConsumer
 from asgiref.sync import async_to_sync
+from .models import Chat, Group
 class MySyncConsumer(SyncConsumer):
 
     def websocket_connect(self, event):
@@ -22,6 +23,7 @@ class MySyncConsumer(SyncConsumer):
     def websocket_receive(self, event):
         print('Message Recieved...', event)
         print('message: ', event['text'])
+       
 
         async_to_sync(self.channel_layer.group_send)(self.groupname, {
             'type': 'chat.message',  # event , now we have to write handler for this event
