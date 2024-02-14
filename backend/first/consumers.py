@@ -6,11 +6,13 @@ from asgiref.sync import async_to_sync
 class MySyncConsumer(SyncConsumer):
 
     def websocket_connect(self, event):
+        self.groupname = self.scope['url_route']['kwargs']['groupname']
         print('websocket Connected...', event)
         print('channel layer...', self.channel_layer)
         print('channel name...', self.channel_name)
+        print('groupname ...', self.groupname)
         async_to_sync(self.channel_layer.group_add)(
-            'programmers', #static group name
+            self.groupname, #static group name
             self.channel_name
             )
         self.send({
@@ -21,7 +23,7 @@ class MySyncConsumer(SyncConsumer):
         print('Message Recieved...', event)
         print('message: ', event['text'])
 
-        async_to_sync(self.channel_layer.group_send)('programmers', {
+        async_to_sync(self.channel_layer.group_send)(self.groupname, {
             'type': 'chat.message',  # event , now we have to write handler for this event
             'message': event['text'],
             'sender': self.channel_name,
@@ -48,13 +50,25 @@ class MySyncConsumer(SyncConsumer):
 
     def websocket_disconnect(self, event):
         print('websocket Disconnected...', event)
+        async_to_sync(self.channel_layer.group_discard)(
+            self.groupname,
+            self.channel_name
+        )             
         raise StopConsumer()
 
 
 class MyAsyncConsumer(AsyncConsumer):
 
     async def websocket_connect(self, event):
+        self.groupname = self.scope['url_route']['kwargs']['groupname']
         print('websocket Connected...', event)
+        print('channel layer...', self.channel_layer)
+        print('channel name...', self.channel_name)
+        print('groupname...', self.groupname)
+        await self.channel_layer.group_add(
+            self.groupname, #static group name
+            self.channel_name
+            )
         await self.send({
             'type': 'websocket.accept',
         })
@@ -62,13 +76,25 @@ class MyAsyncConsumer(AsyncConsumer):
     async def websocket_receive(self, event):
         print('Message Recieved...', event)
         print('message: ', event['text'])
-        for i in range(50) :
+        print()
+        await self.channel_layer.group_send(self.groupname, {
+            'type': 'chat.message',  # event , now we have to write handler for this event
+            'message': event['text'],
+            'sender': self.channel_name,
+        })
+
+    async def chat_message(self, event):
+        print('Event...', event)
+        if(event['sender'] != self.channel_name):
             await self.send({
-                'type' : 'websocket.send',
-                'text' : str(i)
+                'type': 'websocket.send',
+                'text': event['message'],
             })
-            await asyncio.sleep(1)
 
     async def websocket_disconnect(self, event):
         print('websocket Disconnected...', event)
+        await self.channel_layer.group_discard(
+            self.groupname,
+            self.channel_name
+        )            
         raise StopConsumer()
