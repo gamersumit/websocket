@@ -11,37 +11,60 @@ class MySyncConsumer(SyncConsumer):
         print('channel layer...', self.channel_layer)
         print('channel name...', self.channel_name)
         print('groupname ...', self.groupname)
-        async_to_sync(self.channel_layer.group_add)(
+        
+        self.send({
+                'type': 'websocket.accept',
+            })
+        
+        if self.scope['user'].is_authenticated:
+            async_to_sync(self.channel_layer.group_add)(
             self.groupname, #static group name
             self.channel_name
             )
-        self.send({
-            'type': 'websocket.accept',
-        })
+        
+        else :
+            print("sending close type message")
+            self.send({
+                'type': 'websocket.close',
+                'code': 4401,  # Custom code for indicating login required
+                'text': 'Login is required to access this WebSocket.',
+            })
+
 
     def websocket_receive(self, event):
         print('Message Recieved...', event)
         print('message: ', event['text'])
         
+        # adding authentication
+        if self.scope['user'].is_authenticated:
 
-        # import models
-        from .models import Chat, Group
-       
-        # get group object
-        group = Group.objects.get(name = self.groupname)
+            # import models
+            from .models import Chat, Group
+        
+            # get group object
+            group = Group.objects.get(name = self.groupname)
 
-        # create a new chat object
-        chat = Chat(
-            content = event['text'],
-            group = group,
-        )
-        chat.save()
+            # create a new chat object
+            chat = Chat(
+                content = event['text'],
+                group = group,
+            )
+            chat.save()
+        
+            async_to_sync(self.channel_layer.group_send)(self.groupname, {
+                'type': 'chat.message',  # event , now we have to write handler for this event
+                'message': event['text'],
+                'sender': self.channel_name,
+            })
 
-        async_to_sync(self.channel_layer.group_send)(self.groupname, {
-            'type': 'chat.message',  # event , now we have to write handler for this event
-            'message': event['text'],
-            'sender': self.channel_name,
-        })
+
+        else :
+
+            self.send({
+                'type' : 'websocket.send',
+                'text' : 'login required',
+                
+            })
 
         # <!.. realtime data sending >
         # for i in range(50) :
