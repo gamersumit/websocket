@@ -6,8 +6,7 @@ def create_group(request, groupname):
     group = Group.objects.filter(name = groupname).first()
     chats = []
     if group:
-        chats = list(Chat.objects.filter(group = group))
-    
+        chats = [obj.content for obj in Chat.objects.filter(group = group)]
     else :
         group = Group(name = groupname)
         group.save()
